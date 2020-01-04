@@ -232,3 +232,138 @@ let one = EmptyInitializing<Int> { 1 }
 //    return self * other
 //  }
 //}
+
+struct Equating<A> {
+    let equal: (A, A) -> Bool
+}
+
+let intEquatable = Equating<Int> {
+    $0 == $1
+}
+
+extension Combining {
+    static func pair<A, B>(_ a: Combining<A>, _ b: Combining<B>) -> Combining<(A, B)> {
+        Combining<(A, B)> { (lhs, rhs) -> (A, B) in
+            (
+                a.combine(lhs.0, rhs.0),
+                b.combine(lhs.1, rhs.1)
+            )
+        }
+    }
+    
+    static func pointwise<A, B>(_ a: Combining<A>, _ b: Combining<B>) -> Combining<(A) -> B> {
+        Combining<(A) -> B> { (lhs, rhs) -> ((A) -> B) in
+            { input in
+                b.combine(
+                    lhs(a.combine(input, input)),
+                    rhs(a.combine(input, input))
+                )
+            }
+        }
+    }
+    
+    static func array(_ a: Combining<A>) -> Combining<[A]> {
+        Combining<[A]> { (lhs, rhs) in
+            zip(lhs, rhs).reduce(into: []) { (result, arg) in
+                result.append(a.combine(arg.0, arg.1))
+            }
+        }
+    }
+}
+
+let concat = Combining<String>(combine: +)
+
+let pair: Combining<(String, Int)> = .pair(concat, sum)
+pair.combine(("A", 1), ("B", 2))
+
+let pointwise: Combining<(String) -> Int> = .pointwise(concat, sum)
+
+let parseInt: (String) -> Int = { Int($0)! }
+
+pointwise.combine(parseInt, parseInt)("1")
+
+Combining.array(product).combine([1, 2], [1, 3])
+
+struct RawRepresenting<Value, RawValue> {
+    let rawValue: (Value) -> RawValue
+}
+
+enum Foo {
+    case bar
+    case baz
+}
+
+let fooRR = RawRepresenting<Foo, String> {
+    switch $0 {
+    case .bar:
+        return "bar"
+    case .baz:
+        return "baz"
+    }
+}
+
+fooRR.rawValue(.bar)
+
+struct Test: Comparable {
+    let i: Int
+    
+    static func < (lhs: Test, rhs: Test) -> Bool {
+        lhs.i < rhs.i
+    }
+}
+
+struct Comparing<A> {
+    let equating: Equating<A>
+    let lessThan: (A, A) -> Bool
+    var lessOrEqualThan: (A, A) -> Bool {
+        { (lhs, rhs) in
+            self.lessThan(lhs, rhs)
+                || self.equating.equal(lhs, rhs)
+        }
+    }
+    var greaterThan: (A, A) -> Bool {
+        { (lhs, rhs) in
+            !self.lessThan(lhs, rhs)
+        }
+    }
+    
+    var greaterOrEqualThan: (A, A) -> Bool {
+        { (lhs, rhs) in
+            !self.lessOrEqualThan(lhs, rhs)
+        }
+    }
+}
+
+let intComparing = Comparing<Int>(
+    equating: .init(equal: ==),
+    lessThan: <
+)
+
+intComparing.equating.equal(1, 2)
+intComparing.lessThan(1, 2)
+intComparing.lessOrEqualThan(1, 2)
+intComparing.greaterThan(1, 2)
+intComparing.greaterOrEqualThan(1, 2)
+
+protocol DefaultDescribable {
+    static var `default`: Describing<Self> { get }
+}
+
+extension DefaultDescribable {
+    static var `default`: Describing<Self> {
+        Describing<Self>(describe: String.init(describing:))
+    }
+}
+
+func print<A: DefaultDescribable>(tag: String, _ value: A) {
+    let witness = A.default
+    print("[\(tag)] \(witness.describe(value))")
+}
+
+struct Bar {
+    let value: Int
+}
+
+extension Bar: DefaultDescribable {}
+
+print(tag: "debug", Bar(value: 12))
