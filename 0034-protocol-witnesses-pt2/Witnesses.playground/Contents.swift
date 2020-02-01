@@ -282,27 +282,41 @@ let parseInt: (String) -> Int = { Int($0)! }
 
 pointwise.combine(parseInt, parseInt)("1")
 
-Combining.array(product).combine([1, 2], [1, 3])
+Combining
+    .array(product)
+    .combine([1, 2], [1, 3])
 
 struct RawRepresenting<Value, RawValue> {
+    let convert: (RawValue) -> Value?
     let rawValue: (Value) -> RawValue
 }
 
-enum Foo {
+extension RawRepresenting where Value: RawRepresentable, Value.RawValue == RawValue {
+    static var rawRepresentable: RawRepresenting<Value, RawValue> {
+        RawRepresenting(
+            convert: Value.init(rawValue:),
+            rawValue: get(\.rawValue)
+        )
+    }
+}
+
+enum Foo: String {
     case bar
     case baz
 }
 
-let fooRR = RawRepresenting<Foo, String> {
-    switch $0 {
-    case .bar:
-        return "bar"
-    case .baz:
-        return "baz"
-    }
-}
+let fooRR = RawRepresenting<Foo, String>.rawRepresentable
 
 fooRR.rawValue(.bar)
+fooRR.convert("bar")
+
+
+let stringToInt = RawRepresenting<Int, String>(
+    convert: Int.init,
+    rawValue: get(\.description)
+)
+
+stringToInt.rawValue(1)
 
 struct Test: Comparable {
     let i: Int
