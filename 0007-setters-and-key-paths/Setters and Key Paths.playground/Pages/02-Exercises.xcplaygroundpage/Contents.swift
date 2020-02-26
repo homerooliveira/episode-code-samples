@@ -128,11 +128,11 @@ errorSetter(result)
  7. Redefine some of our setters in terms of `inout`. How does the type signature and composition change?
  */
 func mprop<Root, Value>(_ kp: WritableKeyPath<Root, Value>)
-    -> (@escaping (Value) -> Value)
+    -> (@escaping (inout Value) -> Void)
     -> (inout Root) -> Void {
         { update in
             { root in
-                update(root[keyPath: kp])
+                update(&root[keyPath: kp])
             }
         }
 }

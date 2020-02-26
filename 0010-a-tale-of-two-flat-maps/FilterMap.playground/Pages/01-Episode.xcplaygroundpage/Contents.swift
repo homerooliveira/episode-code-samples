@@ -138,9 +138,6 @@ func partitionEither<A>(_ p: @escaping (A) -> Bool) -> (A) -> Either<A, A> {
 }
 
 
-
-
-
 extension Array {
   func partitionMap<A, B>(_ transform: (Element) -> Either<A, B>) -> (lefts: [A], rights: [B]) {
     var result = (lefts: [A](), rights: [B]())
