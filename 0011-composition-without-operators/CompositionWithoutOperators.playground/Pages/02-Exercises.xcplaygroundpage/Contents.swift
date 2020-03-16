@@ -3,10 +3,13 @@
 
  1. Write concat for functions (inout A) -> Void.
  */
-func concat<A>(_ f: @escaping (inout A) -> Void, _ g: @escaping (inout A) -> Void) -> (inout A) -> Void {
+func concat<A>(_ f: @escaping (inout A) -> Void,
+               _ g: @escaping (inout A) -> Void,
+               _ fs: ((inout A) -> Void)...) -> (inout A) -> Void {
     { a in
         f(&a)
         g(&a)
+        fs.forEach { $0(&a) }
     }
 }
 
@@ -30,9 +33,11 @@ number
 /*:
  2. Write concat for functions (A) -> A.
  */
-func concat<A>(_ f: @escaping (A) -> A, _  g: @escaping (A) -> A) -> (A) -> A {
+func concat<A>(_ f: @escaping (A) -> A,
+               _  g: @escaping (A) -> A,
+               _ fs: ((A) -> A)...) -> (A) -> A {
     { a in
-        g(f(a))
+        ([f, g] + fs).reduce(a) { $1($0) }
     }
 }
 
