@@ -60,3 +60,12 @@ public func incr(_ x: Int) -> Int {
 public func square(_ x: Int) -> Int {
   return x * x
 }
+
+
+precedencegroup BackwardsComposition {
+  associativity: left
+}
+infix operator <<<: BackwardsComposition
+public func <<< <A, B, C>(_ f: @escaping (B) -> C, _ g: @escaping (A) -> B) -> (A) -> C {
+  return { f(g($0)) }
+}
