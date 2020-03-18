@@ -125,14 +125,9 @@ subscriptions
 //  .first { $0.id == user.id }
 
 extension Tagged: ExpressibleByIntegerLiteral where RawValue: ExpressibleByIntegerLiteral {
-
-  init(integerLiteral value: RawValue.IntegerLiteralType) {
-    self.init(rawValue: RawValue(integerLiteral: value))
-  }
-
-  typealias IntegerLiteralType = RawValue.IntegerLiteralType
-
-
+    init(integerLiteral value: RawValue.IntegerLiteralType) {
+        self.init(rawValue: RawValue(integerLiteral: value))
+    }
 }
 
 User(
